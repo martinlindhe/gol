@@ -1,8 +1,8 @@
 package gol
 
 import (
+	"image"
 	"math/rand"
-	"strings"
 	"time"
 )
 
@@ -11,95 +11,95 @@ var (
 	rnd        = rand.New(randSource)
 )
 
-// Progress game for each cell
-func Progress(a [][]bool) [][]bool {
+// World represents the game state
+type World struct {
+	area [][]bool
+}
 
-	height := len(a)
-	width := len(a[0])
+// NewWorld creates a new world
+func NewWorld(width, height int) *World {
 
-	next := MakeTwoDimensionalBoolSlice(width, height)
+	world := World{}
+	world.area = makeArea(width, height)
+	return &world
+}
+
+// RandomSeed inits world with a random state
+func (w *World) RandomSeed(limit int) {
+
+	height := len(w.area)
+	width := len(w.area[0])
+
+	for i := 0; i < limit; i++ {
+		x := rnd.Intn(width)
+		y := rnd.Intn(height)
+		w.area[y][x] = true
+	}
+}
+
+// Progress game state by one tick
+func (w *World) Progress() {
+
+	height := len(w.area)
+	width := len(w.area[0])
+
+	next := makeArea(width, height)
 
 	for y := 0; y < height; y++ {
 		for x := 0; x < width; x++ {
 
-			pop := neighbourCount(a, x, y)
+			pop := neighbourCount(w.area, x, y)
 			switch {
 			case pop < 2:
-				// rule 1. Any live cell with fewer than two live neighbours dies,
-				// as if caused by under-population.
+				// rule 1. Any live cell with fewer than two live neighbours
+				// dies, as if caused by under-population.
 				next[y][x] = false
 
-			case (pop == 2 || pop == 3) && a[y][x]:
+			case (pop == 2 || pop == 3) && w.area[y][x]:
 				// rule 2. Any live cell with two or three live neighbours
 				// lives on to the next generation.
 				next[y][x] = true
 
 			case pop > 3:
-				// rule 3. Any live cell with more than three live neighbours dies,
-				// as if by over-population.
+				// rule 3. Any live cell with more than three live neighbours
+				// dies, as if by over-population.
 				next[y][x] = false
 
 			case pop == 3:
-				// rule 4. Any dead cell with exactly three live neighbours becomes
-				// a live cell, as if by reproduction.
+				// rule 4. Any dead cell with exactly three live neighbours
+				// becomes a live cell, as if by reproduction.
 				next[y][x] = true
 			}
 		}
 	}
-
-	return next
+	w.area = next
 }
 
-// PrettyPrint prints a in a pretty fashion
-func PrettyPrint(a [][]bool) string {
+// DrawImage paints current game state
+func (w *World) DrawImage(img *image.RGBA) {
 
-	height := len(a)
-	width := len(a[0])
-
-	res := []string{}
+	height := len(w.area)
+	width := len(w.area[0])
 
 	for y := 0; y < height; y++ {
-
-		line := ""
 		for x := 0; x < width; x++ {
-			if a[y][x] {
-				line += "*"
+			pos := 4*y*width + 4*x
+			if w.area[y][x] {
+				img.Pix[pos] = 0xff
+				img.Pix[pos+1] = 0xff
+				img.Pix[pos+2] = 0xff
+				img.Pix[pos+3] = 0xff
 			} else {
-				line += " "
+				img.Pix[pos] = 0
+				img.Pix[pos+1] = 0
+				img.Pix[pos+2] = 0
+				img.Pix[pos+3] = 0
 			}
 		}
-		res = append(res, line)
 	}
-
-	return strings.Join(res, "\n")
 }
 
-// RandomSeed inits a with limit values at random places
-func RandomSeed(a [][]bool, limit int) [][]bool {
-
-	height := len(a)
-	width := len(a[0])
-
-	for i := 0; i < limit; i++ {
-		w := rnd.Intn(width)
-		h := rnd.Intn(height)
-		a[h][w] = true
-	}
-
-	return a
-}
-
-// MakeTwoDimensionalBoolSlice creates b[height][width]
-func MakeTwoDimensionalBoolSlice(width, height int) [][]bool {
-
-	a := make([][]bool, height)
-	for i := 0; i < height; i++ {
-		a[i] = make([]bool, width)
-	}
-	return a
-}
-
-// counts neughbours next to x,y (min 0, max 8)
+// calculates the Moore neighborhood of x, y
 func neighbourCount(a [][]bool, x, y int) int {
 
 	height := len(a)
@@ -109,6 +109,7 @@ func neighbourCount(a [][]bool, x, y int) int {
 	if x > 0 {
 		lowX = x - 1
 	}
+
 	lowY := 0
 	if y > 0 {
 		lowY = y - 1
@@ -118,24 +119,29 @@ func neighbourCount(a [][]bool, x, y int) int {
 	if x < width-1 {
 		highX = x + 1
 	}
+
 	highY := height - 1
 	if y < height-1 {
 		highY = y + 1
 	}
 
-	// fmt.Println("-- X", width, lowX, highX)
-	// fmt.Println("-- Y", height, lowY, highY)
-
 	near := 0
 	for pY := lowY; pY <= highY; pY++ {
 		for pX := lowX; pX <= highX; pX++ {
-			if pX == x && pY == y {
-
-			} else if a[pY][pX] {
+			if !(pX == x && pY == y) && a[pY][pX] {
 				near++
 			}
 		}
 	}
 
 	return near
+}
+
+func makeArea(width, height int) [][]bool {
+
+	area := make([][]bool, height)
+	for i := 0; i < height; i++ {
+		area[i] = make([]bool, width)
+	}
+	return area
 }

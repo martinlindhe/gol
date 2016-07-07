@@ -1,57 +1,43 @@
 package main
 
 import (
-	"fmt"
+	"image"
+	"log"
 
-	"github.com/gizak/termui"
+	"github.com/hajimehoshi/ebiten"
 	"github.com/martinlindhe/gol"
 )
 
-var (
-	offsetsPar *termui.Par
+const (
+	screenWidth  = 320
+	screenHeight = 240
 )
+
+var (
+	world      *gol.World
+	noiseImage *image.RGBA
+)
+
+func update(screen *ebiten.Image) error {
+
+	world.Progress()
+	world.DrawImage(noiseImage)
+	screen.ReplacePixels(noiseImage.Pix)
+
+	// ebitenutil.DebugPrint(screen, fmt.Sprintf("FPS: %f", ebiten.CurrentFPS()))
+	return nil
+}
 
 func main() {
 
-	err := termui.Init()
-	if err != nil {
-		panic(err)
+	population := int((screenWidth * screenHeight) / 10)
+	scale := 2.0
+
+	world = gol.NewWorld(screenWidth, screenHeight)
+	world.RandomSeed(population)
+
+	noiseImage = image.NewRGBA(image.Rect(0, 0, screenWidth, screenHeight))
+	if err := ebiten.Run(update, screenWidth, screenHeight, scale, "game of life"); err != nil {
+		log.Fatal(err)
 	}
-	defer termui.Close()
-
-	// handle key q pressing
-	termui.Handle("/sys/kbd/q", func(termui.Event) {
-		// press q to quit
-		termui.StopLoop()
-	})
-
-	width := termui.TermWidth() - 2
-	height := termui.TermHeight() - 2
-	population := width * height
-
-	offsetsPar = termui.NewPar("")
-	offsetsPar.Width = width + 2
-	offsetsPar.Height = height + 2
-
-	area := gol.MakeTwoDimensionalBoolSlice(width, height)
-
-	area = gol.RandomSeed(area, population)
-
-	it := 0
-
-	offsetsPar.BorderLabel = fmt.Sprintf("it %d", it)
-	offsetsPar.Text = gol.PrettyPrint(area)
-	termui.Render(offsetsPar)
-
-	termui.Handle("/timer/1s", func(e termui.Event) {
-
-		it++
-		area = gol.Progress(area)
-
-		offsetsPar.BorderLabel = fmt.Sprintf("it %d", it)
-		offsetsPar.Text = gol.PrettyPrint(area)
-		termui.Render(offsetsPar)
-	})
-
-	termui.Loop()
 }
