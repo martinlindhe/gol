@@ -13,7 +13,9 @@ var (
 
 // World represents the game state
 type World struct {
-	area [][]bool
+	area   [][]bool
+	width  int
+	height int
 }
 
 // NewWorld creates a new world
@@ -21,18 +23,17 @@ func NewWorld(width, height int) *World {
 
 	world := World{}
 	world.area = makeArea(width, height)
+	world.width = width
+	world.height = height
 	return &world
 }
 
 // RandomSeed inits world with a random state
 func (w *World) RandomSeed(limit int) {
 
-	height := len(w.area)
-	width := len(w.area[0])
-
 	for i := 0; i < limit; i++ {
-		x := rnd.Intn(width)
-		y := rnd.Intn(height)
+		x := rnd.Intn(w.width)
+		y := rnd.Intn(w.height)
 		w.area[y][x] = true
 	}
 }
@@ -40,15 +41,12 @@ func (w *World) RandomSeed(limit int) {
 // Progress game state by one tick
 func (w *World) Progress() {
 
-	height := len(w.area)
-	width := len(w.area[0])
+	next := makeArea(w.width, w.height)
 
-	next := makeArea(width, height)
+	for y := 0; y < w.height; y++ {
+		for x := 0; x < w.width; x++ {
 
-	for y := 0; y < height; y++ {
-		for x := 0; x < width; x++ {
-
-			pop := neighbourCount(w.area, x, y)
+			pop := w.neighbourCount(x, y)
 			switch {
 			case pop < 2:
 				// rule 1. Any live cell with fewer than two live neighbours
@@ -78,12 +76,9 @@ func (w *World) Progress() {
 // DrawImage paints current game state
 func (w *World) DrawImage(img *image.RGBA) {
 
-	height := len(w.area)
-	width := len(w.area[0])
-
-	for y := 0; y < height; y++ {
-		for x := 0; x < width; x++ {
-			pos := 4*y*width + 4*x
+	for y := 0; y < w.height; y++ {
+		for x := 0; x < w.width; x++ {
+			pos := 4*y*w.width + 4*x
 			if w.area[y][x] {
 				img.Pix[pos] = 0xff
 				img.Pix[pos+1] = 0xff
@@ -100,10 +95,7 @@ func (w *World) DrawImage(img *image.RGBA) {
 }
 
 // calculates the Moore neighborhood of x, y
-func neighbourCount(a [][]bool, x, y int) int {
-
-	height := len(a)
-	width := len(a[0])
+func (w *World) neighbourCount(x, y int) int {
 
 	lowX := 0
 	if x > 0 {
@@ -115,20 +107,20 @@ func neighbourCount(a [][]bool, x, y int) int {
 		lowY = y - 1
 	}
 
-	highX := width - 1
-	if x < width-1 {
+	highX := w.width - 1
+	if x < w.width-1 {
 		highX = x + 1
 	}
 
-	highY := height - 1
-	if y < height-1 {
+	highY := w.height - 1
+	if y < w.height-1 {
 		highY = y + 1
 	}
 
 	near := 0
 	for pY := lowY; pY <= highY; pY++ {
 		for pX := lowX; pX <= highX; pX++ {
-			if !(pX == x && pY == y) && a[pY][pX] {
+			if !(pX == x && pY == y) && w.area[pY][pX] {
 				near++
 			}
 		}
