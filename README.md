@@ -1,5 +1,11 @@
 # About
 
+[![Travis-CI](https://api.travis-ci.org/martinlindhe/gol.svg)](https://travis-ci.org/martinlindhe/gol)
+[![codecov.io](https://codecov.io/github/martinlindhe/gol/coverage.svg?branch=master)](https://codecov.io/github/martinlindhe/gol?branch=master)
+[![GoDoc](https://godoc.org/github.com/martinlindhe/gol?status.svg)](https://godoc.org/github.com/martinlindhe/gol)
+[![Go Report Card](https://goreportcard.com/badge/github.com/martinlindhe/gol)](https://goreportcard.com/report/github.com/martinlindhe/gol)
+
+
 game of life
 
 ![screenshot](screen.png)
