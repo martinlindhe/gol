@@ -22,7 +22,7 @@ to launch desktop version:
 to launch browser version:
 
     cd $GOPATH/src/github.com/martinlindhe/gol
-    gopherjs build -v -o www/gol.js cmd/gol/main.go
+    gopherjs build -o www/gol.js cmd/gol/main.go
 	go run cmd/gol_http/main.go
 
 
