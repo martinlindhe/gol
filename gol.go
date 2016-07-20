@@ -78,55 +78,66 @@ func (w *World) DrawImage(img *image.RGBA) {
 
 	for y := 0; y < w.height; y++ {
 		for x := 0; x < w.width; x++ {
-			pos := 4*y*w.width + 4*x
-			if w.area[y][x] {
-				img.Pix[pos] = 0xff
-				img.Pix[pos+1] = 0xff
-				img.Pix[pos+2] = 0xff
-				img.Pix[pos+3] = 0xff
-			} else {
-				img.Pix[pos] = 0
-				img.Pix[pos+1] = 0
-				img.Pix[pos+2] = 0
-				img.Pix[pos+3] = 0
-			}
+			w.drawPixel(img, x, y)
 		}
+	}
+}
+
+func (w *World) drawPixel(img *image.RGBA, x, y int) {
+	pos := 4*y*w.width + 4*x
+	if w.area[y][x] {
+		img.Pix[pos] = 0xff
+		img.Pix[pos+1] = 0xff
+		img.Pix[pos+2] = 0xff
+		img.Pix[pos+3] = 0xff
+	} else {
+		img.Pix[pos] = 0
+		img.Pix[pos+1] = 0
+		img.Pix[pos+2] = 0
+		img.Pix[pos+3] = 0
 	}
 }
 
 // calculates the Moore neighborhood of x, y
 func (w *World) neighbourCount(x, y int) int {
 
-	lowX := 0
-	if x > 0 {
-		lowX = x - 1
-	}
-
-	lowY := 0
-	if y > 0 {
-		lowY = y - 1
-	}
-
-	highX := w.width - 1
-	if x < w.width-1 {
-		highX = x + 1
-	}
-
-	highY := w.height - 1
-	if y < w.height-1 {
-		highY = y + 1
-	}
-
+	norm := w.normalizeCoords(x, y)
 	near := 0
-	for pY := lowY; pY <= highY; pY++ {
-		for pX := lowX; pX <= highX; pX++ {
+	for pY := norm.lowY; pY <= norm.highY; pY++ {
+		for pX := norm.lowX; pX <= norm.highX; pX++ {
 			if !(pX == x && pY == y) && w.area[pY][pX] {
 				near++
 			}
 		}
 	}
-
 	return near
+}
+
+type normalizedCoords struct {
+	lowX  int
+	lowY  int
+	highX int
+	highY int
+}
+
+func (w *World) normalizeCoords(x, y int) normalizedCoords {
+
+	r := normalizedCoords{}
+	r.highX = w.width - 1
+	r.highY = w.height - 1
+	if x > 0 {
+		r.lowX = x - 1
+	}
+	if y > 0 {
+		r.lowY = y - 1
+	}
+	if x < w.width-1 {
+		r.highX = x + 1
+	}
+	if y < w.height-1 {
+		r.highY = y + 1
+	}
+	return r
 }
 
 func makeArea(width, height int) [][]bool {
